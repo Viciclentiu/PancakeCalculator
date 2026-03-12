@@ -145,6 +145,71 @@ Fridge& Fridge::operator=(const Fridge &obj) {
     this->temp = obj.temp;
     return *this;
 }
+
+
+class CookSesh {
+private:
+    int start_time;
+    int* family_ratings;
+    int num_rating;
+    char* cookName;
+public:
+    CookSesh();
+    CookSesh(const char*,int,int);
+    ~CookSesh();
+    CookSesh(const CookSesh &obj);
+    CookSesh& operator=(const CookSesh &obj);
+};
+
+CookSesh::CookSesh() {
+    cookName= new char[8];
+    strcpy(cookName,"No cook");
+    start_time = 0;
+    family_ratings= nullptr;
+    num_rating= 0;
+
+}
+CookSesh :: CookSesh(const char *name, int start, int num){
+    this->start_time= start;
+    this->family_ratings= new int[num];
+    for (int i=0;i<num;i++) {
+        family_ratings[i]= 10;
+    }
+    this->num_rating= num;
+    this->cookName= new char[16];
+    strcpy(this->cookName,name);
+}
+
+CookSesh::~CookSesh(){
+    delete[] family_ratings;
+    delete[] cookName;
+}
+CookSesh::CookSesh(const CookSesh &obj) {
+    this->start_time= obj.start_time;
+    this->family_ratings= new int[obj.num_rating];
+    for (int i=0;i<obj.num_rating;i++) {
+        family_ratings[i]= obj.family_ratings[i];
+    }
+    this->num_rating= obj.num_rating;
+    this->cookName= new char[16];
+    strcpy(this->cookName,obj.cookName);
+}
+CookSesh& CookSesh::operator=(const CookSesh &obj) {
+    if (this == &obj ) {
+        return *this;
+    }
+    delete[] family_ratings;
+    delete[] cookName;
+    this->start_time= obj.start_time;
+    this->family_ratings= new int[obj.num_rating];
+    for (int i=0;i<obj.num_rating;i++) {
+        family_ratings[i]= obj.family_ratings[i];
+    }
+    this->num_rating= obj.num_rating;
+    this->cookName= new char[16];
+    strcpy(this->cookName,obj.cookName);
+    return *this;
+}
 int main()
 {
 
