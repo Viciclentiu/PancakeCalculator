@@ -14,6 +14,7 @@ public:
     Ingredient(const Ingredient &obj);
     Ingredient& operator=(const Ingredient &obj);
 };
+int Ingredient::no_ingredients=0;
 Ingredient::Ingredient(): id(++no_ingredients) {
     name = new char[1];
     name[0] = '\0';
