@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstring>
-using namespace std;
+// using namespace std;
 class Ingredient {
 private:
     const int id;
@@ -13,6 +13,26 @@ public:
     ~Ingredient();
     Ingredient(const Ingredient &obj);
     Ingredient& operator=(const Ingredient &obj);
+    void set_quantity(double q) {
+        this->quantity = q;
+    }
+    void set_name(const char* n) {
+        delete[] this->name;
+        this->name = new char[strlen(n)+1];
+        strcpy(this->name,n);
+    }
+    char* get_name() const{
+        return this->name;
+    }
+    double get_quantity() const{
+        return this->quantity;
+    }
+    const int get_id() const{
+        return id;
+    }
+    // friend std::ostream& operator<<(std::ostream& out, const Ingredient& obj);
+    // friend std::istream& operator>>(std::istream& in, Ingredient& obj);
+
 };
 int Ingredient::no_ingredients=0;
 Ingredient::Ingredient(): id(++no_ingredients) {
@@ -23,6 +43,7 @@ Ingredient::Ingredient(): id(++no_ingredients) {
 Ingredient::Ingredient(const char* n, double q): id(++no_ingredients), quantity(q) {
     this->name = new char[strlen(n)+1];
     strcpy(this->name, n);
+    this->quantity = q;
 };
 Ingredient::~Ingredient() {
     delete[] name;
@@ -39,6 +60,24 @@ Ingredient& Ingredient::operator=(const Ingredient &obj) {
     this->name = strcpy(new char[strlen(obj.name)+1],obj.name);
     this->quantity = obj.quantity;
     return *this;
+}
+std::ostream& operator<<(std::ostream& out, const Ingredient& obj) {
+    out<<"ID: " << obj.get_id()<<'\n';
+    out<<"Name: "<<obj.get_name()<<'\n';
+    out<<"Quantity: "<<obj.get_quantity()<<'\n';
+    return out;
+}
+
+std::istream& operator>>(std::istream& in, Ingredient& obj) {
+    char buffer[100];
+    std::cout<<"Name: ";
+    in>>buffer;
+    obj.set_name(buffer);
+    std::cout<<"Quantity: ";
+    double q;
+    in>>q;
+    obj.set_quantity(q);
+    return in;
 }
 
 
@@ -102,10 +141,12 @@ private:
     float temp;
     bool isOpen;
     int capacity;
+    int no_items;
+    Ingredient* food;
     char *observations;
 public:
     Fridge();
-    Fridge(const char*,float,int,bool);
+    Fridge(const char*,float,int,bool,int,const Ingredient*);
     ~Fridge();
     Fridge(const Fridge &obj);
     Fridge& operator=(const Fridge &obj);
@@ -116,16 +157,24 @@ Fridge::Fridge() {
     capacity = 0;
     observations = new char[16];
     strcpy(observations,"No observations");
+    no_items=0;
+    food = nullptr;
 }
-Fridge::Fridge(const char* observations, float temp, int capacity,bool isOpen) {
+Fridge::Fridge(const char* observations, float temp, int capacity,bool isOpen,int no_items, const Ingredient *food) {
     this->capacity = capacity;
     this->observations = new char[strlen(observations)];
     strcpy(this->observations,observations);
     this->isOpen = isOpen;
     this->temp = temp;
+    this->food = new Ingredient[no_items];
+    this->no_items = no_items;
+    for (int i=0;i<no_items;i++) {
+        this->food[i] = food[i];
+    }
 }
 Fridge::~Fridge() {
     delete[] observations;
+    delete[] food;
 }
 
 Fridge::Fridge(const Fridge &obj) {
@@ -134,16 +183,24 @@ Fridge::Fridge(const Fridge &obj) {
     strcpy(this->observations,obj.observations);
     this->isOpen = obj.isOpen;
     this->temp = obj.temp;
+    this->no_items = obj.no_items;
+    this->food = new Ingredient[obj.no_items];
 }
 Fridge& Fridge::operator=(const Fridge &obj) {
     if(this == &obj) {
         return *this;
     }
     delete[] observations;
+    delete[] food;
     this->observations= new char[strlen(obj.observations)];
     strcpy(this->observations,obj.observations);
     this->isOpen = obj.isOpen;
     this->temp = obj.temp;
+    this->no_items = obj.no_items;
+    this->food = new Ingredient[obj.no_items];
+    for (int i=0;i<obj.no_items;i++) {
+        this->food[i] = obj.food[i];
+    }
     return *this;
 }
 
