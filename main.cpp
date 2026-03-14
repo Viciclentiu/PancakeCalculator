@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+#include <cfloat>
 #include <random>
 // using namespace std;
 class Ingredient {
@@ -9,12 +10,14 @@ private:
     static int no_ingredients;
     char *name;
     double quantity;
+
 public:
     Ingredient();
     Ingredient(const char* n, double q);
     ~Ingredient();
     Ingredient(const Ingredient &obj);
     Ingredient& operator=(const Ingredient &obj);
+
     void set_quantity(double q) {
         this->quantity = q;
     }
@@ -79,7 +82,7 @@ std::istream& operator>>(std::istream& in, Ingredient& obj) {
     return in;
 }
 
-
+class Fridge;
 
 class Recipe{
 private:
@@ -96,7 +99,7 @@ public:
     int get_count() const {
         return this->count;
     }
-    void set_ingredients(Ingredient* obj){
+    void set_ingredients(const Ingredient* obj){
         delete[] this->ingredients;
         this->ingredients = new Ingredient[this->count];
         for (int i=0;i<this->count;i++) {
@@ -122,6 +125,8 @@ public:
     bool get_can_make() const {
         return this->can_make;
     }
+    void check_can_make(const Fridge&);
+    void how_many(const Fridge&);
 };
 Recipe::Recipe() {
     ingredients = nullptr;
@@ -161,7 +166,8 @@ Recipe& Recipe::operator=(const Recipe &obj) {
     }
     delete[] ingredients;
     this->ingredients = new Ingredient[obj.count];
-    for (int i=0;i<count;i++) {
+    this->count= obj.count;
+    for (int i=0;i<this->count;i++) {
         this->ingredients[i]= obj.ingredients[i];
     }
     this->instructions = new char[256];
@@ -174,6 +180,15 @@ std::istream& operator>>(std::istream& Rin, Recipe& obj) {
     std::cout<<"Instructions: ";
     Rin>>buffer;
     obj.set_instructions(buffer);
+    std::cout<<"Can you make it? [Y/N]";
+    char answer;
+    Rin>>answer;
+    if (answer=='Y') {
+        obj.set_can_make(true);
+    }
+    else {
+        obj.set_can_make(false);
+    }
     std::cout<<"Count: ";
     int cnt;
     Rin>>cnt;
@@ -190,6 +205,7 @@ std::istream& operator>>(std::istream& Rin, Recipe& obj) {
 std::ostream& operator<<(std::ostream& Rout, const Recipe& obj) {
     Rout<<"Recipe: "<<obj.get_instructions()<<"\n";
     Rout<<"Count: "<<obj.get_count()<<"\n";
+    Rout<<"Can make: "<<obj.get_can_make()<<"\n";
     Rout<<"Ingredients: ";
     for (int i=0;i<obj.get_count();i++)
         Rout<<obj.get_ingredients()[i]<<'\n';
@@ -272,7 +288,7 @@ Fridge::Fridge() {
 }
 Fridge::Fridge(const char* observations, int capacity,bool isOpen,int no_items, const Ingredient *food) {
     this->capacity = capacity;
-    this->observations = new char[strlen(observations)];
+    this->observations = new char[strlen(observations)+1];
     strcpy(this->observations,observations);
     this->isOpen = isOpen;
     if (this->isOpen) {
@@ -311,7 +327,7 @@ Fridge& Fridge::operator=(const Fridge &obj) {
     }
     delete[] observations;
     delete[] food;
-    this->observations= new char[strlen(obj.observations)];
+    this->observations= new char[strlen(obj.observations)+1];
     strcpy(this->observations,obj.observations);
     this->isOpen = obj.isOpen;
     this->temp = obj.temp;
@@ -326,11 +342,13 @@ Fridge& Fridge::operator=(const Fridge &obj) {
 std::ostream& operator<<(std::ostream& Fout, const Fridge &obj) {
     Fout<<"Temperature: " << obj.get_temp() << '\n';
     Fout<<"Capacity: " << obj.get_capacity() << '\n';
-    Fout<<"No items: " << obj.get_no_items() << '\n';
+    Fout<<"Number of items: " << obj.get_no_items() << '\n';
     Fout<<"Observations: " << obj.get_observations() << '\n';
+    Fout<<"Contents: ";
     for (int i=0;i<obj.get_no_items();i++) {
-        Fout<<obj.get_food()[i] << '\n';
+        Fout<<obj.get_food()[i] << ' ';
     }
+    Fout<<'\n';
     return Fout;
 }
 
@@ -483,6 +501,72 @@ std::ostream& operator<<(std::ostream &sout, const CookSesh &obj) {
     }
     return sout;
 }
+void Recipe::check_can_make( const Fridge &fridge) {
+    bool possibility = this->get_can_make();
+    if (possibility == false) {
+        std::cout<<"You can't make that yet please learn and come back later."<<'\n';
+        return;
+    }
+    std::cout<<"---- Checking ingredients available -----"<<'\n';
+    if (fridge.get_temp()>10) {
+        std::cout<<"Ingredients are spoiled! You will get sick!"<<'\n';
+        return;
+    }
+    for (int i=0; i<this->get_count();i++) {
+        Ingredient necessary= this->get_ingredients()[i];
+        bool found = false;
+        for (int j=0;j<fridge.get_no_items();j++) {
+            Ingredient available= fridge.get_food()[j];
+            if (strcmp(necessary.get_name(),available.get_name())==0) {
+                found = true;
+                if(available.get_quantity() < necessary.get_quantity()) {
+                    std::cout<<"You don't have enough" <<available.get_name()<<'\n';
+                    std::cout<<"You need:"<<necessary.get_quantity()-available.get_quantity()<<" "<<necessary.get_name()<<'\n';
+                    possibility = false;
+
+                }
+                else {
+                    std::cout<<"You have enough:"<<available.get_name()<<'\n';
+                }
+
+            }
+        }
+        if (!found) {
+            std::cout<< "Missing ingredient" << necessary.get_name()<<'\n';
+            possibility=false;
+        }
+    }
+    if (possibility) {
+        std:: cout<<"You can start cooking. Good luck and have fun! :))"<<'\n';
+    }
+    else {
+        std:: cout<<"You can't cook that yet. Go to the store!"<<'\n';
+    }
+    this->set_can_make(possibility);
+}
+
+void Recipe::how_many( const Fridge &fridge) {
+    check_can_make(fridge);
+    double min_ratio= DBL_MAX;
+    double ratio = 0;
+    //irl with 1 egg  you can make 4 pancakes therefore the end result will be multiplied by 4
+    if (this->get_can_make() == true) {
+        for (int i=0;i<this->get_count();i++) {
+            for (int j=0;j<fridge.get_no_items();j++) {
+
+                if (strcmp(this->get_ingredients()[i].get_name(),fridge.get_food()[j].get_name()) == 0) {
+                    ratio = this->get_ingredients()[i].get_quantity()/fridge.get_food()[j].get_quantity();
+                }
+                min_ratio = std::min(min_ratio,ratio);
+            }
+        }
+        std::cout<<"You can make " << min_ratio*4<<" pancakes"<<'\n';
+    }
+}
+
+
+
+
 int main()
 {
 
