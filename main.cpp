@@ -3,6 +3,8 @@
 #include <cstring>
 #include <cfloat>
 #include <random>
+#include<ctime>
+#include <windows.h>
 // using namespace std;
 class Ingredient {
 private:
@@ -42,7 +44,7 @@ Ingredient::Ingredient(): id(++no_ingredients) {
     name[0] = '\0';
     quantity = 0.0;
 }
-Ingredient::Ingredient(const char* n, double q): id(++no_ingredients), quantity(q) {
+Ingredient::Ingredient(const char* n, double q): id(++no_ingredients) {
     this->name = new char[strlen(n)+1];
     strcpy(this->name, n);
     this->quantity = q;
@@ -50,7 +52,7 @@ Ingredient::Ingredient(const char* n, double q): id(++no_ingredients), quantity(
 Ingredient::~Ingredient() {
     delete[] name;
 }
-Ingredient::Ingredient(const Ingredient &obj) : id(++no_ingredients) {
+Ingredient::Ingredient(const Ingredient &obj): id(obj.id){
     this->name = strcpy(new char[strlen(obj.name)+1],obj.name);
     this->quantity = obj.quantity;
 };
@@ -74,6 +76,7 @@ std::istream& operator>>(std::istream& in, Ingredient& obj) {
     char buffer[100];
     std::cout<<"Name: ";
     in>>buffer;
+    in.ignore();
     obj.set_name(buffer);
     std::cout<<"Quantity: ";
     double q;
@@ -110,6 +113,8 @@ public:
         this->can_make = can;
     }
     void set_instructions(const char* inst) {
+        delete[] this->instructions;
+        this->instructions = new char[strlen(inst)+1];
         strcpy(this->instructions,inst);
     }
     void set_count(int cnt) {
@@ -165,6 +170,7 @@ Recipe& Recipe::operator=(const Recipe &obj) {
         return *this;
     }
     delete[] ingredients;
+    delete[] instructions;
     this->ingredients = new Ingredient[obj.count];
     this->count= obj.count;
     for (int i=0;i<this->count;i++) {
@@ -179,10 +185,12 @@ std::istream& operator>>(std::istream& Rin, Recipe& obj) {
     char buffer[256];
     std::cout<<"Instructions: ";
     Rin>>buffer;
+    Rin.ignore();
     obj.set_instructions(buffer);
     std::cout<<"Can you make it? [Y/N]";
     char answer;
-    Rin>>answer;
+    Rin>>std::ws>>answer;
+    Rin.ignore();
     if (answer=='Y') {
         obj.set_can_make(true);
     }
@@ -211,6 +219,8 @@ std::ostream& operator<<(std::ostream& Rout, const Recipe& obj) {
         Rout<<obj.get_ingredients()[i]<<'\n';
     return Rout;
 }
+
+
 class Fridge {
 private:
     float temp;
@@ -221,7 +231,7 @@ private:
     char *observations;
     float rand_temp() {
         std::mt19937 rng(std::random_device{}());
-        std::uniform_real_distribution<float> number(0.0,30.0);
+        std::uniform_real_distribution<float> number(-10.0,30.0);
         float num=number(rng);
         return num;
     }
@@ -274,8 +284,11 @@ public:
         return this->observations;
     }
     void set_observations(const char* obs) {
+        delete[] this->observations;
+        this->observations = new char[strlen(obs)+1];
         strcpy(this->observations,obs);
     }
+    void fridge_check() const;
 };
 Fridge::Fridge() {
     temp = 0.0;
@@ -339,6 +352,20 @@ Fridge& Fridge::operator=(const Fridge &obj) {
     return *this;
 }
 
+void Fridge::fridge_check() const {
+    if (this->isOpen) {
+        if (this->temp >10) {
+            std::cout<<"Your fridge door is open and your food has spoiled!\n";
+        }
+        else {
+            std::cout<<"Your fridge door is open and luckly your food hasn't spoiled. Close it quickly!\n";
+        }
+    }
+    else {
+        std::cout<<"Your fridge is alright and the food as well.\n";
+    }
+}
+
 std::ostream& operator<<(std::ostream& Fout, const Fridge &obj) {
     Fout<<"Temperature: " << obj.get_temp() << '\n';
     Fout<<"Capacity: " << obj.get_capacity() << '\n';
@@ -356,7 +383,6 @@ std::istream& operator>>(std::istream& Fin, Fridge &obj) {
     std::cout<<"How many items are there? "<<'\n';
     int items;
     Fin>>items;
-
     obj.set_no_items(items);
     std::cout<<"Max capacity: ";
     int capacity;
@@ -364,7 +390,8 @@ std::istream& operator>>(std::istream& Fin, Fridge &obj) {
     obj.set_capacity(capacity);
     char ans;
     std::cout<<"Is it open?[Y/N] " <<'\n';
-    std::cin>>ans;
+    Fin>>ans;
+    std::cin.ignore();
     bool isOpen;
     if (ans == 'Y') {
         isOpen = true;
@@ -376,6 +403,7 @@ std::istream& operator>>(std::istream& Fin, Fridge &obj) {
     char buffer[100];
     std::cout<<"Any observations? ";
     Fin>>buffer;
+    Fin.ignore();
     obj.set_observations(buffer);
     Ingredient* food = new Ingredient[items];
     for (int i=0;i<items;i++) {
@@ -383,6 +411,69 @@ std::istream& operator>>(std::istream& Fin, Fridge &obj) {
     }
     obj.set_food(food);
     return Fin;
+}
+
+void Recipe::check_can_make( const Fridge &fridge) {
+    bool possibility = this->get_can_make();
+    if (possibility == false) {
+        std::cout<<"You can't make that yet please learn and come back later."<<'\n';
+        return;
+    }
+    std::cout<<"---- Checking ingredients available -----"<<'\n';
+    if (fridge.get_temp()>10) {
+        std::cout<<"Ingredients are spoiled! You will get sick!"<<'\n';
+        return;
+    }
+    for (int i=0; i<this->get_count();i++) {
+        Ingredient necessary= this->get_ingredients()[i];
+        bool found = false;
+        for (int j=0;j<fridge.get_no_items();j++) {
+            Ingredient available= fridge.get_food()[j];
+            if (strcmp(necessary.get_name(),available.get_name())==0) {
+                found = true;
+                if(available.get_quantity() < necessary.get_quantity()) {
+                    std::cout<<"You don't have enough" <<available.get_name()<<'\n';
+                    std::cout<<"You need:"<<necessary.get_quantity()-available.get_quantity()<<" "<<necessary.get_name()<<'\n';
+                    possibility = false;
+
+                }
+                else {
+                    std::cout<<"You have enough:"<<available.get_name()<<'\n';
+                }
+
+            }
+        }
+        if (!found) {
+            std::cout<< "Missing ingredient" << necessary.get_name()<<'\n';
+            possibility=false;
+        }
+    }
+    if (possibility) {
+        std:: cout<<"You can start cooking. Good luck and have fun! :))"<<'\n';
+    }
+    else {
+        std:: cout<<"You can't cook that yet. Go to the store!"<<'\n';
+    }
+    this->set_can_make(possibility);
+}
+
+void Recipe::how_many( const Fridge &fridge) {
+    check_can_make(fridge);
+    double min_ratio= DBL_MAX;
+    double ratio = 0;
+    //irl with 1 egg  you can make 4 pancakes therefore the end result will be multiplied by 4
+    if (this->get_can_make() == true) {
+        for (int i=0;i<this->get_count();i++) {
+            for (int j=0;j<fridge.get_no_items();j++) {
+                if (strcmp(this->get_ingredients()[i].get_name(),fridge.get_food()[j].get_name()) == 0) {
+                    ratio = fridge.get_food()[j].get_quantity()/this->get_ingredients()[i].get_quantity();
+                    min_ratio = std::min(min_ratio,ratio);
+                }
+
+            }
+        }
+        std::cout<<"You can make " << min_ratio*4<<" pancakes"<<'\n';
+    }
 }
 
 
@@ -414,7 +505,9 @@ public:
     void set_start_time(int s) {
         start_time = s;
     };
-    void set_name(const char* name) const {
+    void set_name(const char* name) {
+        delete[] this->cookName;
+        this->cookName= new char[strlen(name)+1];
         strcpy(this->cookName,name);
     };
     char* get_name() const {
@@ -429,6 +522,7 @@ public:
     int* get_family_ratings() const {
         return this->family_ratings;
     }
+    float avg_rating();
 };
 
 CookSesh::CookSesh() {
@@ -495,80 +589,141 @@ std::ostream& operator<<(std::ostream &sout, const CookSesh &obj) {
     sout<<"Cook Name: "<<obj.get_name()<<"\n";
     sout<<"Start Time: "<<obj.get_start_time()<<"\n";
     sout<<"Number of Ratings: "<<obj.get_num_rating()<<"\n";
-    sout<<"All Ratings: ";
-    for (int i=0;i<obj.get_num_rating();i++) {
-        sout<<obj.get_family_ratings()[i]<<" ";
-    }
     return sout;
 }
-void Recipe::check_can_make( const Fridge &fridge) {
-    bool possibility = this->get_can_make();
-    if (possibility == false) {
-        std::cout<<"You can't make that yet please learn and come back later."<<'\n';
-        return;
+float CookSesh::avg_rating() {
+    float avg=0.0;
+    for (int i=0;i<this->get_num_rating();i++) {
+        avg+=(float) this->get_family_ratings()[i];
     }
-    std::cout<<"---- Checking ingredients available -----"<<'\n';
-    if (fridge.get_temp()>10) {
-        std::cout<<"Ingredients are spoiled! You will get sick!"<<'\n';
-        return;
-    }
-    for (int i=0; i<this->get_count();i++) {
-        Ingredient necessary= this->get_ingredients()[i];
-        bool found = false;
-        for (int j=0;j<fridge.get_no_items();j++) {
-            Ingredient available= fridge.get_food()[j];
-            if (strcmp(necessary.get_name(),available.get_name())==0) {
-                found = true;
-                if(available.get_quantity() < necessary.get_quantity()) {
-                    std::cout<<"You don't have enough" <<available.get_name()<<'\n';
-                    std::cout<<"You need:"<<necessary.get_quantity()-available.get_quantity()<<" "<<necessary.get_name()<<'\n';
-                    possibility = false;
-
-                }
-                else {
-                    std::cout<<"You have enough:"<<available.get_name()<<'\n';
-                }
-
-            }
-        }
-        if (!found) {
-            std::cout<< "Missing ingredient" << necessary.get_name()<<'\n';
-            possibility=false;
-        }
-    }
-    if (possibility) {
-        std:: cout<<"You can start cooking. Good luck and have fun! :))"<<'\n';
-    }
-    else {
-        std:: cout<<"You can't cook that yet. Go to the store!"<<'\n';
-    }
-    this->set_can_make(possibility);
+    avg/=(float)this->get_num_rating();
+    return avg;
 }
+void command_list() {
+    std::cout<<"1)Enter the fridge your using\n";
+    std::cout<<"2)Calculate how many pancakes can you make with certain ingredients.\n";
+    std::cout<<"3)Check your fridge.\n";
+    std::cout<<"4)Check if you can make a certain recipe.\n";
+    std::cout<<"5)Get your rating made by your family.\n";
+    std::cout<<"6)Display current ingredients\n"; //placeholder
+    std::cout<<"0)Exit\n";
 
-void Recipe::how_many( const Fridge &fridge) {
-    check_can_make(fridge);
-    double min_ratio= DBL_MAX;
-    double ratio = 0;
-    //irl with 1 egg  you can make 4 pancakes therefore the end result will be multiplied by 4
-    if (this->get_can_make() == true) {
-        for (int i=0;i<this->get_count();i++) {
-            for (int j=0;j<fridge.get_no_items();j++) {
+}
+void fridge_input(Fridge &fridge) {
+    std::cout<<"What do you have in your fridge?\n ";
+    std::cin>>fridge;
+}
+void maker(const Fridge &fridge){
+    Recipe recipe;
+    std::cout<<"Enter recipe: ";
+    std::cin>>recipe;
+    recipe.how_many(fridge);
+}
+void can_make(const Fridge &fridge) {
+    Recipe recipe;
 
-                if (strcmp(this->get_ingredients()[i].get_name(),fridge.get_food()[j].get_name()) == 0) {
-                    ratio = this->get_ingredients()[i].get_quantity()/fridge.get_food()[j].get_quantity();
-                }
-                min_ratio = std::min(min_ratio,ratio);
-            }
-        }
-        std::cout<<"You can make " << min_ratio*4<<" pancakes"<<'\n';
+    std::cout<<"Enter recipe: ";
+    std::cin>>recipe;
+    recipe.check_can_make(fridge);
+}
+void check_fridge(const Fridge &fridge) {
+    std::cout<<fridge;
+    fridge.fridge_check();
+}
+void get_ingredients(const Fridge &fridge) {
+    for (int i=0;i<fridge.get_no_items();i++) {
+        std::cout<<fridge.get_food()[i]<<'\n';
     }
 }
+void rate(CookSesh &obj) {
+    std::cout<<obj;
+    std::cout<<obj.avg_rating()<<'\n';
+}
+void Commands() {
+    std:: cout<<"Please enter your name: " ;
+    char name[100];
+    std:: cin>>name;
+    std:: cin.ignore();
+    time_t now = time(0);
+    tm *timeinfo = localtime(&now);
+    int current_time= timeinfo->tm_hour *100 + timeinfo->tm_min;
+    Sleep(300);
+    system("cls");
+    CookSesh cookSesh(name,current_time);
+    Fridge fridge;
+    std::cout<<"Welcome:"<<cookSesh.get_name()<<"!\n";
+    std::cout<<"You started the session at: "<<cookSesh.get_start_time()/100<<':'<< cookSesh.get_start_time()%100<<'\n' ;
+    Sleep(1500);
+    while (true) {
+        char command;
+        command_list();
+        std::cout<<"Enter command: ";
+
+        std::cin>>command;
+        std::cin.ignore();
+        switch (command) {
+            case '0':
+                std::cout<<"Exiting program... goodbye!";
+                return;
+                break;
+            case '1':
+                // system("cls");
+                fridge_input(fridge);
+                break;
+
+            case '2':
+                // system("cls");
+                maker(fridge);
+                break;
+            case '3':
+                // system("cls");
+                check_fridge(fridge);
+                break;
+            case '4':
+                // system("cls");
+                can_make(fridge);
+                break;
+            case '5':
+                // system("cls");
+                rate(cookSesh);
+                break;
+            case '6':
+                // system("cls");
+                get_ingredients(fridge);
+                break;
+            default:
+                std::cout<<"Invalid command!";
+                break;
 
 
+        }
+    }
+}
 
+void Menu() {
+    Sleep(300);
+    std::cout<<"Welcome to: "<<'\n'<<std::flush;
+    Sleep(300);
+    std::cout<<R"(
+            __________                              __
+            \______   \_____    ____   ____ _____  |  | __ ____
+             |     ___/\__  \  /    \_/ ___\\__  \ |  |/ // __ \
+             |    |     / __ \|   |  \  \___ / __ \|    <\  ___/
+             |____|    (____  /___|  /\___  >____  /__|_ \\___  >
+                            \/     \/     \/     \/     \/    \/
+            _________        .__               .__          __
+            \_   ___ \_____  |  |   ____  __ __|  | _____ _/  |_  ___________
+            /    \  \/\__  \ |  | _/ ___\|  |  \  | \__  \\   __\/  _ \_  __ \
+            \     \____/ __ \|  |_\  \___|  |  /  |__/ __ \|  | (  <_> )  | \/
+             \______  (____  /____/\___  >____/|____(____  /__|  \____/|__|
+                    \/     \/          \/                \/
+        )"<<std::flush;
+    Sleep(300);
+    Commands();
+}
 
 int main()
 {
-
+    Menu();
     return 0;
 }
