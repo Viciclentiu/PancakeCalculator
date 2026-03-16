@@ -75,8 +75,7 @@ std::ostream& operator<<(std::ostream& out, const Ingredient& obj) {
 std::istream& operator>>(std::istream& in, Ingredient& obj) {
     char buffer[100];
     std::cout<<"Name: ";
-    in>>buffer;
-    in.ignore();
+    in.getline(buffer,100);
     obj.set_name(buffer);
     std::cout<<"Quantity: ";
     double q;
@@ -184,13 +183,12 @@ Recipe& Recipe::operator=(const Recipe &obj) {
 std::istream& operator>>(std::istream& Rin, Recipe& obj) {
     char buffer[256];
     std::cout<<"Instructions: ";
-    Rin>>buffer;
-    Rin.ignore();
+    Rin.getline(buffer,256,'\n');
     obj.set_instructions(buffer);
     std::cout<<"Can you make it? [Y/N]";
     char answer;
-    Rin>>std::ws>>answer;
-    Rin.ignore();
+    Rin>>answer;
+    Rin.get();
     if (answer=='Y') {
         obj.set_can_make(true);
     }
@@ -201,10 +199,12 @@ std::istream& operator>>(std::istream& Rin, Recipe& obj) {
     int cnt;
     Rin>>cnt;
     obj.set_count(cnt);
+    Rin.get();
     std::cout<<"Ingredients: ";
     Ingredient* ing = new Ingredient[cnt];
     for (int i=0;i<cnt;i++) {
         Rin>>ing[i];
+        Rin.get();
     }
     obj.set_ingredients(ing);
     delete[] ing;
@@ -400,14 +400,16 @@ std::istream& operator>>(std::istream& Fin, Fridge &obj) {
         isOpen = false;
     }
     obj.set_open(isOpen);
-    char buffer[100];
+    char buffer[256];
     std::cout<<"Any observations? ";
-    Fin>>buffer;
-    Fin.ignore();
+    // Fin.ignore(1000,'\n');
+    Fin.getline(buffer,256);
     obj.set_observations(buffer);
+    std::cout<<"Contents: ";
     Ingredient* food = new Ingredient[items];
     for (int i=0;i<items;i++) {
         Fin>>food[i];
+        Fin.get();
     }
     obj.set_food(food);
     return Fin;
@@ -577,7 +579,8 @@ CookSesh& CookSesh::operator=(const CookSesh &obj) {
 std::istream& operator>>(std::istream &sin, CookSesh &obj) {
     std::cout<<"Enter cook name: ";
     char name[100];
-    sin>>name;
+    sin.ignore(1000,'\n');
+    sin.getline(name,100);
     obj.set_name(name);
     std::cout<<"Enter start time: ";
     int start_time;
@@ -642,13 +645,13 @@ void rate(CookSesh &obj) {
 void Commands() {
     std:: cout<<"Please enter your name: " ;
     char name[100];
-    std:: cin>>name;
-    std:: cin.ignore();
+    std::cin.getline(name,100);
+
     time_t now = time(0);
     tm *timeinfo = localtime(&now);
     int current_time= timeinfo->tm_hour *100 + timeinfo->tm_min;
     Sleep(300);
-    system("cls");
+    // system("cls");
     CookSesh cookSesh(name,current_time);
     Fridge fridge;
     std::cout<<"Welcome:"<<cookSesh.get_name()<<"!\n";
