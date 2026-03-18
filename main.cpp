@@ -1,5 +1,5 @@
-#include <algorithm>
 #include <iostream>
+#include <algorithm>
 #include <cstring>
 #include <cfloat>
 #include <random>
@@ -253,7 +253,7 @@ public:
             this->temp = rand_temp();
         }
         else {
-            this->temp = 0.0;
+            this->temp = -10.0;
         }
     }
     void set_capacity(int capa) {
@@ -449,10 +449,14 @@ void Recipe::check_can_make( const Fridge &fridge) {
         }
     }
     if (possibility) {
+        system("Color 0A");
         std:: cout<<"You can start cooking. Good luck and have fun! :))"<<'\n';
+        system("Color 07");
     }
     else {
+        system("Color 04");
         std:: cout<<"You can't cook that yet. Go to the store!"<<'\n';
+        system("Color 07");
     }
     this->set_can_make(possibility);
 }
@@ -472,6 +476,7 @@ void Recipe::how_many( const Fridge &fridge) {
 
             }
         }
+
         std::cout<<"You can make " << min_ratio*4<<" pancakes"<<'\n';
     }
 }
@@ -599,47 +604,60 @@ float CookSesh::avg_rating() {
     avg/=(float)this->get_num_rating();
     return avg;
 }
-void command_list() {
+class Menu {
+    public:
+    Menu() {}
+    void start();
+    void command_list();
+    void fridge_input(Fridge&);
+    void maker(const Fridge&);
+    void commands();
+    void get_ingredients(const Fridge&);
+    void can_make(const Fridge&);
+    void check_fridge(const Fridge&);
+    void rate(CookSesh&);
+};
+void Menu::command_list() {
     std::cout<<"1)Enter the fridge your using\n";
     std::cout<<"2)Calculate how many pancakes can you make with certain ingredients.\n";
     std::cout<<"3)Check your fridge.\n";
     std::cout<<"4)Check if you can make a certain recipe.\n";
     std::cout<<"5)Get your rating made by your family.\n";
-    std::cout<<"6)Display current ingredients\n"; //placeholder
+    std::cout<<"6)Display current ingredients\n";
     std::cout<<"0)Exit\n";
 
 }
-void fridge_input(Fridge &fridge) {
+void Menu::fridge_input(Fridge &fridge) {
     std::cout<<"What do you have in your fridge?\n ";
     std::cin>>fridge;
 }
-void maker(const Fridge &fridge){
+void Menu::maker(const Fridge &fridge){
     Recipe recipe;
     std::cout<<"Enter recipe: ";
     std::cin>>recipe;
     recipe.how_many(fridge);
 }
-void can_make(const Fridge &fridge) {
+void Menu::can_make(const Fridge &fridge) {
     Recipe recipe;
 
     std::cout<<"Enter recipe: ";
     std::cin>>recipe;
     recipe.check_can_make(fridge);
 }
-void check_fridge(const Fridge &fridge) {
+void Menu::check_fridge(const Fridge &fridge) {
     std::cout<<fridge;
     fridge.fridge_check();
 }
-void get_ingredients(const Fridge &fridge) {
+void Menu::get_ingredients(const Fridge &fridge) {
     for (int i=0;i<fridge.get_no_items();i++) {
         std::cout<<fridge.get_food()[i]<<'\n';
     }
 }
-void rate(CookSesh &obj) {
+void Menu::rate(CookSesh &obj) {
     std::cout<<obj;
     std::cout<<obj.avg_rating()<<'\n';
 }
-void Commands() {
+void Menu::commands() {
     std:: cout<<"Please enter your name: " ;
     char name[100];
     std:: cin>>name;
@@ -648,15 +666,15 @@ void Commands() {
     tm *timeinfo = localtime(&now);
     int current_time= timeinfo->tm_hour *100 + timeinfo->tm_min;
     Sleep(300);
-    system("cls");
+    //system("cls");
     CookSesh cookSesh(name,current_time);
     Fridge fridge;
     std::cout<<"Welcome:"<<cookSesh.get_name()<<"!\n";
     std::cout<<"You started the session at: "<<cookSesh.get_start_time()/100<<':'<< cookSesh.get_start_time()%100<<'\n' ;
-    Sleep(1500);
+    Sleep(3000);
     while (true) {
         char command;
-        command_list();
+        this->command_list();
         std::cout<<"Enter command: ";
 
         std::cin>>command;
@@ -665,7 +683,7 @@ void Commands() {
             case '0':
                 std::cout<<"Exiting program... goodbye!";
                 return;
-                break;
+
             case '1':
                 // system("cls");
                 fridge_input(fridge);
@@ -673,23 +691,23 @@ void Commands() {
 
             case '2':
                 // system("cls");
-                maker(fridge);
+                this->maker(fridge);
                 break;
             case '3':
                 // system("cls");
-                check_fridge(fridge);
+                this->check_fridge(fridge);
                 break;
             case '4':
                 // system("cls");
-                can_make(fridge);
+                this->can_make(fridge);
                 break;
             case '5':
                 // system("cls");
-                rate(cookSesh);
+                this->rate(cookSesh);
                 break;
             case '6':
                 // system("cls");
-                get_ingredients(fridge);
+                this->get_ingredients(fridge);
                 break;
             default:
                 std::cout<<"Invalid command!";
@@ -700,7 +718,7 @@ void Commands() {
     }
 }
 
-void Menu() {
+void Menu::start() {
     Sleep(300);
     std::cout<<"Welcome to: "<<'\n'<<std::flush;
     Sleep(300);
@@ -719,11 +737,12 @@ void Menu() {
                     \/     \/          \/                \/
         )"<<std::flush;
     Sleep(300);
-    Commands();
+    this->commands();
 }
 
 int main()
 {
-    Menu();
+    Menu menu;
+    menu.start();
     return 0;
 }
