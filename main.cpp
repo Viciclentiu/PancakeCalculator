@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cfloat>
 #include <random>
-#include<ctime>
+#include <ctime>
 #include <windows.h>
 // using namespace std;
 class Ingredient {
@@ -371,7 +371,7 @@ void Fridge::fridge_check() const {
             std::cout<<"Your fridge door is open and your food has spoiled!\n";
         }
         else {
-            std::cout<<"Your fridge door is open and luckly your food hasn't spoiled. Close it quickly!\n";
+            std::cout<<"Your fridge door is open and luckily your food hasn't spoiled. Close it quickly!\n";
         }
     }
     else {
@@ -436,9 +436,9 @@ void Recipe::check_can_make( const Fridge &fridge) {
     }
     std::cout<<"---- Checking ingredients available -----"<<'\n';
     if (fridge.get_temp()>10) {
-        system("Color 04");
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
         std::cout<<"Ingredients are spoiled! You will get sick!"<<'\n';
-        system("Color 07");
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
         return;
     }
     for (int i=0; i<this->get_count();i++) {
@@ -449,31 +449,31 @@ void Recipe::check_can_make( const Fridge &fridge) {
             if (strcmp(necessary.get_name(),available.get_name())==0) {
                 found = true;
                 if(available.get_quantity() < necessary.get_quantity()) {
-                    std::cout<<"You don't have enough" <<available.get_name()<<'\n';
-                    std::cout<<"You need:"<<necessary.get_quantity()-available.get_quantity()<<" "<<necessary.get_name()<<'\n';
+                    std::cout<<"You don't have enough: " <<available.get_name()<<'\n';
+                    std::cout<<"You need: "<<necessary.get_quantity()-available.get_quantity()<<" "<<necessary.get_name()<<'\n';
                     possibility = false;
 
                 }
                 else {
-                    std::cout<<"You have enough:"<<available.get_name()<<'\n';
+                    std::cout<<"You have enough: "<<available.get_name()<<'\n';
                 }
 
             }
         }
         if (!found) {
-            std::cout<< "Missing ingredient" << necessary.get_name()<<'\n';
+            std::cout<< "Missing ingredient: " << necessary.get_name()<<'\n';
             possibility=false;
         }
     }
     if (possibility) {
-        system("Color 0A");
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
         std:: cout<<"You can start cooking. Good luck and have fun! :))"<<'\n';
-        system("Color 07");
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
     }
     else {
-        system("Color 04");
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
         std:: cout<<"You can't cook that yet. Go to the store!"<<'\n';
-        system("Color 07");
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
     }
     this->set_can_make(possibility);
 }
@@ -691,7 +691,6 @@ void Menu::commands() {
     tm *timeinfo = localtime(&now);
     int current_time= timeinfo->tm_hour *100 + timeinfo->tm_min;
     Sleep(300);
-    //system("cls");
     CookSesh cookSesh(name,current_time);
     Fridge fridge;
     std::cout<<"Welcome:"<<cookSesh.get_name()<<"!\n";
@@ -710,32 +709,34 @@ void Menu::commands() {
                 return;
 
             case '1':
-                // system("cls");
+                system("cls");
                 fridge_input(fridge);
                 break;
 
             case '2':
-                // system("cls");
+                system("cls");
                 this->maker(fridge);
                 break;
             case '3':
-                // system("cls");
+                system("cls");
                 this->check_fridge(fridge);
                 break;
             case '4':
-                // system("cls");
+                system("cls");
                 this->can_make(fridge);
                 break;
             case '5':
-                // system("cls");
+                system("cls");
                 this->rate(cookSesh);
                 break;
             case '6':
-                // system("cls");
+                system("cls");
                 this->get_ingredients(fridge);
                 break;
             default:
-                std::cout<<"Invalid command!";
+                std::cout<<"Invalid command!\n";
+                Sleep(1000);
+                system("cls");
                 break;
 
 
