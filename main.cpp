@@ -38,7 +38,7 @@ public:
         return id;
     }
 };
-int Ingredient::no_ingredients=0;
+
 Ingredient::Ingredient(): id(++no_ingredients) {
     name = new char[1];
     name[0] = '\0';
@@ -86,8 +86,13 @@ std::istream& operator>>(std::istream& in, Ingredient& obj) {
 
 class Fridge;
 
+
+
+
 class Recipe{
 private:
+    static int no_recipe;
+    const int rec_id;
     Ingredient* ingredients;
     char* instructions;
     int count;
@@ -132,14 +137,14 @@ public:
     void check_can_make(const Fridge&);
     void how_many(const Fridge&);
 };
-Recipe::Recipe() {
+Recipe::Recipe() : rec_id(no_recipe++) {
     ingredients = nullptr;
     instructions = new char[16];
     strcpy(instructions, "No recipes");
     count= 0;
     can_make=false;
 }
-Recipe::Recipe(const char *ins, const Ingredient *ingred,int count,bool canmake) {
+Recipe::Recipe(const char *ins, const Ingredient *ingred,int count,bool canmake) : rec_id(no_recipe++) {
         this->count= count;
         this->ingredients = new Ingredient[count];
         for (int i=0;i<count;i++) {
@@ -154,7 +159,7 @@ Recipe::~Recipe() {
     delete[] ingredients;
     delete[] instructions;
 }
-Recipe::Recipe(const Recipe &obj) {
+Recipe::Recipe(const Recipe &obj) : rec_id(no_recipe++) {
     this->count= obj.count;
     this->ingredients = new Ingredient[obj.count];
     for (int i=0;i<obj.count;i++) {
@@ -199,10 +204,12 @@ std::istream& operator>>(std::istream& Rin, Recipe& obj) {
     int cnt;
     Rin>>cnt;
     obj.set_count(cnt);
+    Rin.get();
     std::cout<<"Ingredients: ";
     Ingredient* ing = new Ingredient[cnt];
     for (int i=0;i<cnt;i++) {
         Rin>>ing[i];
+        Rin.get();
     }
     obj.set_ingredients(ing);
     delete[] ing;
@@ -221,6 +228,8 @@ std::ostream& operator<<(std::ostream& Rout, const Recipe& obj) {
 
 class Fridge {
 private:
+    static int no_fridges;
+    const int fridge_id;
     float temp;
     bool isOpen;
     int capacity;
@@ -286,9 +295,13 @@ public:
         this->observations = new char[strlen(obs)+1];
         strcpy(this->observations,obs);
     }
+    const int get_id() const {
+        return this->fridge_id;
+    }
     void fridge_check() const;
 };
-Fridge::Fridge() {
+
+Fridge::Fridge() : fridge_id(no_fridges++){
     temp = 0.0;
     isOpen = false;
     capacity = 0;
@@ -297,7 +310,7 @@ Fridge::Fridge() {
     no_items=0;
     food = nullptr;
 }
-Fridge::Fridge(const char* observations, int capacity,bool isOpen,int no_items, const Ingredient *food) {
+Fridge::Fridge(const char* observations, int capacity,bool isOpen,int no_items, const Ingredient *food) : fridge_id(no_fridges++) {
     this->capacity = capacity;
     this->observations = new char[strlen(observations)+1];
     strcpy(this->observations,observations);
@@ -320,7 +333,7 @@ Fridge::~Fridge() {
     delete[] food;
 }
 
-Fridge::Fridge(const Fridge &obj) {
+Fridge::Fridge(const Fridge &obj) : fridge_id(no_fridges++) {
     this->capacity = obj.capacity;
     this->observations = new char[strlen(obj.observations)+1];
     strcpy(this->observations,obj.observations);
@@ -421,7 +434,9 @@ void Recipe::check_can_make( const Fridge &fridge) {
     }
     std::cout<<"---- Checking ingredients available -----"<<'\n';
     if (fridge.get_temp()>10) {
+        system("Color 04");
         std::cout<<"Ingredients are spoiled! You will get sick!"<<'\n';
+        system("Color 07");
         return;
     }
     for (int i=0; i<this->get_count();i++) {
@@ -463,27 +478,35 @@ void Recipe::check_can_make( const Fridge &fridge) {
 
 void Recipe::how_many( const Fridge &fridge) {
     check_can_make(fridge);
-    double min_ratio= DBL_MAX;
-    double ratio = 0;
-    //irl with 1 egg  you can make 4 pancakes therefore the end result will be multiplied by 4
     if (this->get_can_make() == true) {
-        for (int i=0;i<this->get_count();i++) {
-            for (int j=0;j<fridge.get_no_items();j++) {
-                if (strcmp(this->get_ingredients()[i].get_name(),fridge.get_food()[j].get_name()) == 0) {
-                    ratio = fridge.get_food()[j].get_quantity()/this->get_ingredients()[i].get_quantity();
-                    min_ratio = std::min(min_ratio,ratio);
-                }
+        double min_ratio= DBL_MAX;
+        double ratio = 0;
+        //irl with 1 egg  you can make 4 pancakes therefore the end result will be multiplied by 4
+        if (this->get_can_make() == true) {
+            for (int i=0;i<this->get_count();i++) {
+                for (int j=0;j<fridge.get_no_items();j++) {
+                    if (strcmp(this->get_ingredients()[i].get_name(),fridge.get_food()[j].get_name()) == 0) {
+                        ratio = fridge.get_food()[j].get_quantity()/this->get_ingredients()[i].get_quantity();
+                        min_ratio = std::min(min_ratio,ratio);
+                    }
 
+                }
             }
+            std::cout<<"You can make " << min_ratio*4<<" pancakes"<<'\n';
         }
-        std::cout<<"You can make " << min_ratio*4<<" pancakes"<<'\n';
     }
+    else {
+        return;
+    }
+
 }
 
 
 
 class CookSesh {
 private:
+    static int no_cooks;
+    const int cook_id;
     int start_time;
     int* family_ratings;
     int num_rating;
@@ -529,7 +552,7 @@ public:
     float avg_rating();
 };
 
-CookSesh::CookSesh() {
+CookSesh::CookSesh() : cook_id(no_cooks++) {
     cookName= new char[8];
     strcpy(cookName,"No cook");
     start_time = 0;
@@ -537,7 +560,7 @@ CookSesh::CookSesh() {
     num_rating= 0;
 
 }
-CookSesh :: CookSesh(const char *name, int start){
+CookSesh :: CookSesh(const char *name, int start) : cook_id(no_cooks++){
     this->start_time= start;
     this->num_rating= rand_ratenum();
     this->family_ratings= new int[this->num_rating];
@@ -552,7 +575,7 @@ CookSesh::~CookSesh(){
     delete[] family_ratings;
     delete[] cookName;
 }
-CookSesh::CookSesh(const CookSesh &obj) {
+CookSesh::CookSesh(const CookSesh &obj) : cook_id(no_cooks++) {
     this->start_time= obj.start_time;
     this->family_ratings= new int[obj.num_rating];
     for (int i=0;i<obj.num_rating;i++) {
@@ -627,6 +650,7 @@ void Menu::command_list() {
 
 }
 void Menu::fridge_input(Fridge &fridge) {
+
     std::cout<<"What do you have in your fridge?\n ";
     std::cin>>fridge;
 }
@@ -716,7 +740,10 @@ void Menu::commands() {
         }
     }
 }
-
+int Ingredient::no_ingredients=0;
+int Fridge::no_fridges = 0;
+int Recipe::no_recipe = 0;
+int CookSesh::no_cooks = 0;
 void Menu::start() {
     Sleep(300);
     std::cout<<"Welcome to: "<<'\n'<<std::flush;
