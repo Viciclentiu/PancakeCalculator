@@ -106,10 +106,10 @@ public:
     int get_count() const {
         return this->count;
     }
-    void set_ingredients(const Ingredient* obj){
+    void set_ingredients(const Ingredient* obj,int cnt){
         delete[] this->ingredients;
-        this->ingredients = new Ingredient[this->count];
-        for (int i=0;i<this->count;i++) {
+        this->ingredients = new Ingredient[cnt];
+        for (int i=0;i<cnt;i++) {
             this->ingredients[i] = obj[i];
         }
     }
@@ -211,7 +211,7 @@ std::istream& operator>>(std::istream& Rin, Recipe& obj) {
         Rin>>ing[i];
         Rin.get();
     }
-    obj.set_ingredients(ing);
+    obj.set_ingredients(ing,cnt);
     delete[] ing;
     return Rin;
 }
@@ -283,7 +283,9 @@ public:
     }
     void set_food(const Ingredient* f) {
 
-        for (int i=0;i<this->no_items;i++) {
+        delete[] this->food;
+        this->food = new Ingredient[this->get_no_items()];
+        for (int i=0;i<this->get_no_items();i++) {
             this->food[i] = f[i];
         }
     }
