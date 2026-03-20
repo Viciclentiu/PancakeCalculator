@@ -368,14 +368,20 @@ Fridge& Fridge::operator=(const Fridge &obj) {
 void Fridge::fridge_check() const {
     if (this->isOpen) {
         if (this->temp >10) {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
             std::cout<<"Your fridge door is open and your food has spoiled!\n";
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
         }
         else {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6);
             std::cout<<"Your fridge door is open and luckily your food hasn't spoiled. Close it quickly!\n";
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
         }
     }
     else {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
         std::cout<<"Your fridge is alright and the food as well.\n";
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
     }
 }
 
