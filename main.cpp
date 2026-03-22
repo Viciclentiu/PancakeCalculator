@@ -166,10 +166,11 @@ Recipe::Recipe(const Recipe &obj) : rec_id(no_recipe++) {
     for (int i=0;i<obj.count;i++) {
         this->ingredients[i] = obj.ingredients[i];
     }
-    this->instructions = new char[strlen(obj.instructions+1)];
+    this->instructions = new char[strlen(obj.instructions)+1];
     strcpy(this->instructions,obj.instructions);
     this->can_make = obj.can_make;
 }
+
 Recipe& Recipe::operator=(const Recipe &obj) {
     if (this == &obj) {
         return *this;
@@ -181,7 +182,7 @@ Recipe& Recipe::operator=(const Recipe &obj) {
     for (int i=0;i<this->count;i++) {
         this->ingredients[i]= obj.ingredients[i];
     }
-    this->instructions = new char[strlen(obj.instructions+1)];
+    this->instructions = new char[strlen(obj.instructions)+1];
     strcpy(this->instructions,obj.instructions);
     this->can_make = obj.can_make;
     return *this;
