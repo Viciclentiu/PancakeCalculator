@@ -23,11 +23,7 @@ public:
     void set_quantity(double q) {
         this->quantity = q;
     }
-    void set_name(const char* n) {
-        delete[] this->name;
-        this->name = new char[strlen(n)+1];
-        strcpy(this->name,n);
-    }
+    void set_name(const char* n);
     char* get_name() const{
         return this->name;
     }
@@ -82,6 +78,11 @@ std::istream& operator>>(std::istream& in, Ingredient& obj) {
     in>>q;
     obj.set_quantity(q);
     return in;
+}
+void Ingredient::set_name(const char* n) {
+    delete[] this->name;
+    this->name = new char[strlen(n)+1];
+    strcpy(this->name,n);
 }
 
 class Fridge;
@@ -151,7 +152,7 @@ Recipe::Recipe(const char *ins, const Ingredient *ingred,int count,bool canmake)
             this->ingredients[i] = ingred[i];
         }
 
-        this->instructions = new char[256];
+        this->instructions = new char[strlen(ins+1)];
         strcpy(this->instructions,ins);
         this->can_make = canmake;
 }
@@ -165,7 +166,7 @@ Recipe::Recipe(const Recipe &obj) : rec_id(no_recipe++) {
     for (int i=0;i<obj.count;i++) {
         this->ingredients[i] = obj.ingredients[i];
     }
-    this->instructions = new char[256];
+    this->instructions = new char[strlen(obj.instructions+1)];
     strcpy(this->instructions,obj.instructions);
     this->can_make = obj.can_make;
 }
@@ -180,7 +181,7 @@ Recipe& Recipe::operator=(const Recipe &obj) {
     for (int i=0;i<this->count;i++) {
         this->ingredients[i]= obj.ingredients[i];
     }
-    this->instructions = new char[256];
+    this->instructions = new char[strlen(obj.instructions+1)];
     strcpy(this->instructions,obj.instructions);
     this->can_make = obj.can_make;
     return *this;
@@ -224,6 +225,9 @@ std::ostream& operator<<(std::ostream& Rout, const Recipe& obj) {
         Rout<<obj.get_ingredients()[i]<<'\n';
     return Rout;
 }
+
+
+
 
 
 class Fridge {
@@ -575,7 +579,7 @@ CookSesh :: CookSesh(const char *name, int start) : cook_id(no_cooks++){
     for (int i=0;i<this->num_rating;i++) {
         family_ratings[i]= rand_rating();
     }
-    this->cookName= new char[16];
+    this->cookName= new char[strlen(name)+1];
     strcpy(this->cookName,name);
 }
 
@@ -590,7 +594,7 @@ CookSesh::CookSesh(const CookSesh &obj) : cook_id(no_cooks++) {
         family_ratings[i]= obj.family_ratings[i];
     }
     this->num_rating= obj.num_rating;
-    this->cookName= new char[16];
+    this->cookName= new char[strlen(obj.cookName)+1];
     strcpy(this->cookName,obj.cookName);
 }
 CookSesh& CookSesh::operator=(const CookSesh &obj) {
