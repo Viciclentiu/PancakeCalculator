@@ -152,7 +152,7 @@ Recipe::Recipe(const char *ins, const Ingredient *ingred,int count,bool canmake)
             this->ingredients[i] = ingred[i];
         }
 
-        this->instructions = new char[strlen(ins+1)];
+        this->instructions = new char[strlen(ins)+1];
         strcpy(this->instructions,ins);
         this->can_make = canmake;
 }
